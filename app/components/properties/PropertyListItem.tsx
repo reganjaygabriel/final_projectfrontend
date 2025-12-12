@@ -4,9 +4,13 @@ import { useRouter } from "next/navigation";
 
 interface PropertyProps {
   property: PropertyType;
+  markFavorite: (is_favorite: boolean) => void;
 }
 
-const PropertyListItem: React.FC<PropertyProps> = ({ property }) => {
+const PropertyListItem: React.FC<PropertyProps> = ({
+  property,
+  markFavorite,
+}) => {
   const router = useRouter();
 
   return (
