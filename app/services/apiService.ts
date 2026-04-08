@@ -107,18 +107,20 @@ const apiService = {
             })
                 .then(async (response) => {
                     const contentType = response.headers.get('content-type') || '';
-                    if (!response.ok) {
-                        const text = await response.text();
-                        reject(new Error(`POST ${fullUrl} failed: ${response.status} ${response.statusText} - ${text.slice(0, 200)}`));
-                        return;
-                    }
                     if (contentType.includes('application/json')) {
                         const json = await response.json();
                         console.log('Response:', json);
+                        
+                        // Resolve with the JSON even if status is not ok
+                        // This allows the caller to handle validation errors
                         resolve(json);
                     } else {
                         const text = await response.text();
-                        reject(new Error(`Expected JSON but received Content-Type: ${contentType}. Body: ${text.slice(0, 200)}`));
+                        if (!response.ok) {
+                            reject(new Error(`POST ${fullUrl} failed: ${response.status} ${response.statusText} - ${text.slice(0, 200)}`));
+                        } else {
+                            reject(new Error(`Expected JSON but received Content-Type: ${contentType}. Body: ${text.slice(0, 200)}`));
+                        }
                     }
                 })
                 .catch((error => {

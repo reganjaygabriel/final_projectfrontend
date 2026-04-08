@@ -38,13 +38,20 @@ const ReservationSidebar: React.FC<ReservationSidebarProps> = ({
     const [minDate, setMinDate] = useState<Date>(new Date());
     const [bookedDates, setBookedDates] = useState<Date[]>([]);
     const [guests, setGuests] = useState<string>('1');
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string>('');
+    const [success, setSuccess] = useState<boolean>(false);
     const guestsRange = Array.from({ length: property.guests }, (_, index) => index + 1)
 
     const performBooking = async () => {
         console.log('performBooking', userId);
+        setError('');
+        setSuccess(false);
 
         if (userId) {
             if (dateRange.startDate && dateRange.endDate) {
+                setIsLoading(true);
+                
                 const formData = new FormData();
                 formData.append('guests', guests);
                 formData.append('start_date', format(dateRange.startDate, 'yyyy-MM-dd'));
@@ -52,13 +59,25 @@ const ReservationSidebar: React.FC<ReservationSidebarProps> = ({
                 formData.append('number_of_nights', nights.toString());
                 formData.append('total_price', totalPrice.toString());
 
-                const response = await apiService.post(`/api/properties/${property.id}/book/`, formData);
+                try {
+                    const response = await apiService.post(`/api/properties/${property.id}/book/`, formData);
 
-                if (response.success) {
-                    console.log('Bookin successful')
-                } else {
-                    console.log('Something went wrong...');
+                    if (response.success) {
+                        console.log('Booking successful');
+                        setSuccess(true);
+                        setError('');
+                    } else {
+                        console.log('Something went wrong...');
+                        setError('Booking failed. Please try again.');
+                    }
+                } catch (err) {
+                    console.error('Booking error:', err);
+                    setError('An error occurred while booking. Please try again.');
+                } finally {
+                    setIsLoading(false);
                 }
+            } else {
+                setError('Please select check-in and check-out dates.');
             }
         } else {
             loginModal.open();
@@ -149,10 +168,24 @@ const ReservationSidebar: React.FC<ReservationSidebarProps> = ({
 
             <div 
                 onClick={performBooking}
-                className="w-full mb-6 py-6 text-center text-white bg-airbnb hover:bg-airbnb-dark rounded-xl"
+                className={`w-full mb-6 py-6 text-center text-white rounded-xl cursor-pointer ${
+                    isLoading ? 'bg-gray-400' : success ? 'bg-green-600' : 'bg-airbnb hover:bg-airbnb-dark'
+                }`}
             >
-                Book
+                {isLoading ? 'Booking...' : success ? 'Booked!' : 'Book'}
             </div>
+
+            {error && (
+                <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-xl">
+                    {error}
+                </div>
+            )}
+
+            {success && (
+                <div className="mb-4 p-4 bg-green-100 text-green-700 rounded-xl">
+                    Booking successful! Check your reservations.
+                </div>
+            )}
 
             <div className="mb-4 flex justify-between align-center">
                 <p>${property.price_per_night} * {nights} nights</p>

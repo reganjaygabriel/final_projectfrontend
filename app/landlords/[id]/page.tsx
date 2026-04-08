@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Image from "next/image";
 
 import ContactButton from "@/app/components/ContactButton";
@@ -70,9 +71,11 @@ const LandlordDetailPage = async (props: { params: Promise<{ id: string }> }) =>
 
                 <div className="col-span-1 md:col-span-3 pl-0 md:pl-6">
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
-                         <PropertyList 
-                            landlord_id={id}
-                        />
+                        <Suspense fallback={<div>Loading properties...</div>}>
+                            <PropertyList 
+                                landlord_id={id}
+                            />
+                        </Suspense>
                     </div> 
                 </div>
             </div>

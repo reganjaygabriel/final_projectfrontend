@@ -1,56 +1,111 @@
-"use server";
+'use server';
 
-import { cookies } from "next/headers";
+import { cookies } from 'next/headers';
 
-export async function handleLogin(
-  userId: string,
-  accessToken: string,
-  refreshToken: string
-) {
-  const cookieStore = await cookies();
+export async function handleRefresh() {
+    const cookieStore = await cookies();
+    console.log('handleRefresh');
 
-  cookieStore.set("session_userid", userId, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 24 * 7,
-    path: "/",
-  });
+    const refreshToken = await getRefreshToken();
 
-  cookieStore.set("session_access_token", accessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60,
-    path: "/",
-  });
+    const token = await fetch('http://localhost:8000/api/auth/token/refresh/', {
+        method: 'POST',
+        body: JSON.stringify({
+            refresh: refreshToken
+        }),
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => response.json())
+        .then((json) => {
+            console.log('Response - Refresh:', json);
 
-  cookieStore.set("session_refresh_token", refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 24 * 7,
-    path: "/",
-  });
+            if (json.access) {
+                cookieStore.set('session_access_token', json.access, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    maxAge: 60 * 60, // 60 minutes
+                    path: '/'
+                });
+
+                return json.access;
+            } else {
+                // Cannot write cookies during render — return null and let the
+                // caller (e.g. a logout button Server Action) clear cookies instead.
+                return null;
+            }
+        })
+        .catch((error) => {
+            console.log('error', error);
+            return null;
+        })
+
+    return token;
 }
+
+export async function handleLogin(userId: string, accessToken: string, refreshToken: string) {
+    const cookieStore = await cookies();
+
+    cookieStore.set('session_userid', userId, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24 * 7,
+        path: '/'
+    });
+
+    cookieStore.set('session_access_token', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60,
+        path: '/'
+    });
+
+    cookieStore.set('session_refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24 * 7,
+        path: '/'
+    });
+}
+
+
+
 
 export async function resetAuthCookies() {
-  const cookieStore = await cookies();
+    const cookieStore = await cookies();
 
-  cookieStore.set("session_userid", "");
-  cookieStore.set("session_access_token", "");
-  cookieStore.set("session_refresh_token", "");
+    cookieStore.set('session_userid', '');
+    cookieStore.set('session_access_token', '');
+    cookieStore.set('session_refresh_token', '');
 }
+
+
 
 //
 // Get data
 
 export async function getUserId() {
-  const cookieStore = await cookies();
-  const userId = cookieStore.get("session_userid")?.value;
-  return userId ? userId : null;
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('session_userid')?.value;
+    return userId ? userId : null;
 }
 
 export async function getAccessToken() {
-  const cookieStore = await cookies();
-  let accessToken = cookieStore.get("session_access_token")?.value;
+    const cookieStore = await cookies();
+    let accessToken = cookieStore.get('session_access_token')?.value;
 
-  return accessToken;
+     if (!accessToken) {
+        accessToken = await handleRefresh();
+    }
+
+    return accessToken;
+}
+
+export async function getRefreshToken() {
+    const cookieStore = await cookies();
+    let refreshToken = cookieStore.get('session_refresh_token')?.value;
+
+    return refreshToken;
 }
