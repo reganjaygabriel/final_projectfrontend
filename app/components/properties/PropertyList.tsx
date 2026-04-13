@@ -56,6 +56,26 @@ const PropertyList: React.FC<PropertyListProps> = ({
         setProperties(tmpProperties);
     }
 
+    const handleDelete = async (id: string) => {
+        try {
+            const response = await apiService.delete(`/api/properties/${id}/delete/`);
+            
+            console.log('Delete response:', response);
+            
+            if (response && response.success) {
+                // Remove property from list
+                setProperties(properties.filter(property => property.id !== id));
+                console.log('Property deleted successfully');
+            } else {
+                console.error('Failed to delete property:', response);
+                alert(response?.message || 'Failed to delete property. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error deleting property:', error);
+            alert('An error occurred while deleting the property: ' + (error instanceof Error ? error.message : String(error)));
+        }
+    }
+
     const getProperties = async () => {
         let url = '/api/properties/';
 
@@ -130,6 +150,8 @@ const PropertyList: React.FC<PropertyListProps> = ({
                         key={property.id} 
                         property={property}
                         markFavorite={(is_favorite: any) => markFavorite(property.id, is_favorite)}
+                        onDelete={landlord_id ? handleDelete : undefined}
+                        showDelete={!!landlord_id}
                     />
                 )
             })}

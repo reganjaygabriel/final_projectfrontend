@@ -127,6 +127,48 @@ const apiService = {
                     reject(error);
                 }))
         })
+    },
+
+    delete: async function(url: string): Promise<any> {
+        console.log('delete', url);
+
+        const token = await getAccessToken();
+
+        return new Promise((resolve, reject) => {
+            const host = process.env.NEXT_PUBLIC_API_HOST;
+            if (!host) {
+                reject(new Error('NEXT_PUBLIC_API_HOST is not defined'));
+                return;
+            }
+            const fullUrl = new URL(url, host).toString();
+
+            fetch(fullUrl, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                }
+            })
+                .then(async (response) => {
+                    const contentType = response.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) {
+                        const json = await response.json();
+                        console.log('Response:', json);
+                        resolve(json);
+                    } else {
+                        const text = await response.text();
+                        if (!response.ok) {
+                            reject(new Error(`DELETE ${fullUrl} failed: ${response.status} ${response.statusText} - ${text.slice(0, 200)}`));
+                        } else {
+                            resolve({ success: true });
+                        }
+                    }
+                })
+                .catch((error => {
+                    reject(error);
+                }))
+        })
     }
 }
 
