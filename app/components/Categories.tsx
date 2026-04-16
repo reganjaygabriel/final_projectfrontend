@@ -90,7 +90,7 @@ const Categories = () => {
                     height={20}
                 />
 
-                <span className='text-xs'>Tiny homes</span>
+                <span className='text-xs'>Tiny Homes</span>
             </div>
         </div>
     )

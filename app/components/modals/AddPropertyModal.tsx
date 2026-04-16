@@ -109,7 +109,7 @@ const AddPropertyModal = () => {
         <>
             {currentStep == 1 ? (
                 <>
-                    <h2 className='mb-6 text-2xl'>Choose category</h2>
+                    <h2 className='mb-6 text-2xl'>Choose Category</h2>
 
                     <Categories
                         dataCategory={dataCategory}
@@ -293,7 +293,7 @@ const AddPropertyModal = () => {
             <Modal
                 isOpen={addPropertyModal.isOpen}
                 close={addPropertyModal.close}
-                label="Add property"
+                label="Add Property"
                 content={content}
             />
         </>
